@@ -1,0 +1,89 @@
+ELEC-C7310
+Sovellusohjelmointi
+Katariina Tuovinen
+561507
+
+Learning diary - Code cleaner
+
+I started to plan the first project already during the first lecture in the beginning
+of September.  My plan was to select the easiest and most simple topic since I had
+no previous experience with Linux/UNIX system programming. Even though I have good
+programming skills with C and some previous experience with Linux and software projects
+I still wanted to make things as simple as possible. The code cleaner seemed like the easiest
+topic since I had already done a similar code cleaner script during the Basics of C programming course.
+
+Even though there were many things in the project topic description I didn't know
+or understand, I started to work with the code cleaner logic already during the first
+weeks of the course. I figured the most simple way of parsing the input file would be
+first cleaning the comments into a temp file and then removing the empty lines out of that.
+I implemented these two operations as two independent functions from which I later on
+decided also make a library libcleaner.a. The logic behind these two library functions
+is really simple. The remove_comments function reads the input file character by character
+with two char pointers. These two pointers check if the current characters indicate a start
+of the comment line and skip it. Otherwise the function writes the code into a temp file.
+The temp file is then passed as an argument to remove_empty_lines function, which basically
+checks if the current line has even one character and then writes it to the final clean file.
+
+After the cleanerlib.a functions I started to work with the cleaner.c module. I had
+an idea of the cleaner calling the cleanerlib.a functions and also doing the error
+signal handling. The latter was really difficult for me to understand, but with the
+examples shown on the lectures I managed to scrape together a signal handler that most
+likely works.
+
+So far the project had seemed quite simple and understandable. However after this point
+things got little complicated since I had no idea how to implement the child processes
+for multiple input files. I somehow understood the idea of child processes and that they
+should be created as many as there were command line arguments (argc). However I couldn't
+understand how to sync the multiple child processes with the cleaner module. At this
+point I got help from a friend who explained that there should be an independent module
+(main.c) which is called with multiple command line arguments. This module then calls and
+thus creates as many cleaner instances as there where command line arguments or input
+files. I had somehow forgotten the execvp system call function and once this problem was
+solved things started to work again quite smoothly. The signal handling function was pretty
+much the same as in cleaner.c module except the difference that in case of sigint signal it
+had to kill the remaining child processes. This was implemented also in a brute force way,
+since I used a while loop to check whether the remaining child processes have exited
+and if not I just used kill command again. Perhaps this was another thing which could
+have been implemented better.
+
+The last module of my project was the log.c module. At the beginning I had a naive
+idea to simply use fprintf or similar file writing function for writing into the log file.
+I noticed however quite quickly that it wouldn't work since I should consider a situation
+where there are multiple processes trying to write into the same log file. Also the
+varying number on parameters passed to the function would also cause problems. This I
+figured to solve with variable argument list and a dummy proof logic where the number
+on parameters is passed as a argument to the function. Afterwards thinking this part could have
+been done more elegantly but I ran out of time. The most difficult part here however
+was to understand the logic behind write function in a situation where someone else
+is already writing into the same file descriptor. The idea of using non blocking
+I/O and simply trying again in case of failing seemed first a bit clumsy solution.
+At last I however decided to accept the fact that you can't understand everything
+and just used a snip of code which worked.
+
+Writing the Makefile caused some problems in the end. I have had some experience
+with writing much more simpler Makefiles and for example creating libraries was a
+new thing for me. As I mentioned earlier I had decided to make two target files
+cleaner and main which needed several prerequisite files and libraries. Basically both
+target files/executable objects used the same prerequisites (main.c, cleaner.c, libcleaner
+library, log.h header file) so this was pretty straightforward. However I struggled quite
+some time figuring out how to link the libcleaner.a binary file for the both target files.
+In the end it just needed the .-L flag and -lcleaner reference to work.
+
+Honestly said the project was tested quite vaguely. I run both cleaner and main programs
+with different and several input files. They both created a new file containing the clean
+code. Also the log file was writing stuff in a correct order and with clear input. After I
+had checked that the logic works correctly I run both the executables with Valgrind. For some
+reason I had prepared for nasty memory leaks but luckily there were none! On the other
+hand this was quite logical since I only used dynamic memory while creating the names
+for the input files and opening them. One thing that should have been tested more
+carefully was checking whether the logic behind child processes returning actually
+worked correctly. This was however quite difficult since I'm not quite sure if I
+understood the process correctly and didn't have any hands-on ideas to implement it.
+
+All in all I'm quite satisfied with the result. I wasn't planning on doing any fancy stuff,
+just making a simple project that would fulfill the requirements. There was a lot of new
+information which I think I managed to somehow understand and use in the project. As I mentioned
+earlier, there are couple of things I would have improved if I had some more time. The write_log
+function could have been replaced with a proper implementation of a printf function which could also
+handle escape checking. Other thing to fix would probably be the signal handling functions in the main.c
+module. 
